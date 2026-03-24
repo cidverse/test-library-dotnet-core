@@ -1,11 +1,12 @@
 {
   "workflows": {
     "Nightly": {
-      "version": "0.5.0",
+      "version": "0.9.0",
       "name": "Nightly",
       "name_slug": "nightly",
       "job_timeout": 10,
       "default_branch": "main",
+      "container_runtime": "podman",
       "workflow_key": "nightly",
       "workflow_config": {
         "type": "nightly",
@@ -30,6 +31,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-build",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -58,6 +60,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -79,6 +84,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-test",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -107,6 +113,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -143,10 +152,6 @@
                 {
                   "name": "gitleaks",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -169,6 +174,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -182,10 +190,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -214,10 +218,6 @@
                 {
                   "name": "semgrep",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -243,6 +243,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -256,10 +259,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -277,10 +276,6 @@
                 {
                   "name": "trivy",
                   "constraint": "=\u003e 0.61.0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -306,6 +301,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -319,52 +317,324 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
             "order": 4
+          },
+          {
+            "id": "6",
+            "name": "zizmor-scan",
+            "slug": "zizmor-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/zizmor-scan",
+            "access": {
+              "env": [
+                {
+                  "name": "GH_HOSTNAME",
+                  "description": "GH_HOSTNAME is required for some online audits"
+                },
+                {
+                  "name": "GH_TOKEN",
+                  "description": "GH_TOKEN is required for some online audits. Takes precedence over GITHUB_TOKEN"
+                },
+                {
+                  "name": "GITHUB_TOKEN",
+                  "description": "GITHUB_TOKEN is set automatically by GitHub Actions"
+                }
+              ],
+              "executables": [
+                {
+                  "name": "zizmor",
+                  "constraint": "=\u003e 1.4.1"
+                }
+              ],
+              "network": [
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {},
+            "outputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "sarif"
+                }
+              ]
+            },
+            "order": 5
+          },
+          {
+            "id": "5",
+            "name": "sonarqube-scan",
+            "slug": "sonarqube-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/sonarqube-scan",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "SONAR_HOST_URL",
+                  "description": "The SonarQube host URL."
+                },
+                {
+                  "name": "SONAR_ORGANIZATION",
+                  "description": "The SonarQube organization."
+                },
+                {
+                  "name": "SONAR_PROJECTKEY",
+                  "description": "The SonarQube project key."
+                },
+                {
+                  "name": "SONAR_DEFAULT_BRANCH",
+                  "description": "The SonarQube default branch."
+                },
+                {
+                  "name": "SONAR_REGION",
+                  "description": "Can be used to switch to the US-based SonarCloud instance."
+                },
+                {
+                  "name": "SONAR_TOKEN",
+                  "description": "The SonarQube authentication token.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "sonar-scanner",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "sonarcloud.io:443"
+                },
+                {
+                  "host": "api.sonarcloud.io:443"
+                },
+                {
+                  "host": "scanner.sonarcloud.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "trx"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 6
+          },
+          {
+            "id": "7",
+            "name": "codecov-upload",
+            "slug": "codecov-upload",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/codecov-upload",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "CODECOV_TOKEN",
+                  "description": "The Codecov token to use for uploading the report.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "codecov",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "ingest.codecov.io:443"
+                },
+                {
+                  "host": "storage.googleapis.com:443"
+                },
+                {
+                  "host": "api.codecov.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 7
           }
         ]
       },
       "workflow_dependency": {
-        "actions/checkout": {
+        "pkg:github-action-runner-image/ubuntu": {
+          "id": "ubuntu",
+          "type": "github-action-runner-image",
+          "version": "24.04"
+        },
+        "pkg:github-action/actions/checkout": {
           "id": "actions/checkout",
           "type": "github-action",
-          "version": "v4.2.2",
-          "hash": "11bd71901bbe5b1630ceea73d27597364c9af683"
+          "version": "v6.0.2",
+          "hash": "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
         },
-        "actions/download-artifact": {
+        "pkg:github-action/actions/download-artifact": {
           "id": "actions/download-artifact",
           "type": "github-action",
-          "version": "v4.3.0",
-          "hash": "d3f86a106a0bac45b974a628896c90dbdf5c8093 "
+          "version": "v8.0.1",
+          "hash": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
         },
-        "actions/upload-artifact": {
+        "pkg:github-action/actions/upload-artifact": {
           "id": "actions/upload-artifact",
           "type": "github-action",
-          "version": "v4.6.2",
-          "hash": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+          "version": "v7.0.0",
+          "hash": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f"
         },
-        "cid": {
-          "id": "cid",
-          "type": "binary",
-          "version": "0.5.0"
-        },
-        "cidverse/ghact-cid-setup": {
-          "id": "cidverse/ghact-cid-setup",
-          "type": "github-action",
-          "version": "v0.2.0",
-          "hash": "c6dac0517d28bd8871c195fee9a6bd5a5854d5cb"
-        },
-        "step-security/harden-runner": {
+        "pkg:github-action/step-security/harden-runner": {
           "id": "step-security/harden-runner",
           "type": "github-action",
-          "version": "v2.12.0",
-          "hash": "0634a2670c59f64b4a01f0f96f84700a4088b9f0"
+          "version": "v2.16.0",
+          "hash": "fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594"
+        },
+        "pkg:github/cidverse/cid": {
+          "id": "cidverse/cid",
+          "type": "github",
+          "version": "0.9.0"
         }
       },
       "ignore_files": [
@@ -374,15 +644,17 @@
         ".gitattributes",
         ".editorconfig",
         "renovate.json",
-        "CODEOWNERS"
+        "CODEOWNERS",
+        "SECURITY.md"
       ]
     },
     "Pull Request": {
-      "version": "0.5.0",
+      "version": "0.9.0",
       "name": "Pull Request",
       "name_slug": "pull-request",
       "job_timeout": 10,
       "default_branch": "main",
+      "container_runtime": "podman",
       "workflow_key": "pull-request",
       "workflow_config": {
         "type": "pull-request",
@@ -405,6 +677,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-build",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -433,6 +706,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -454,6 +730,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-test",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -482,6 +759,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -518,10 +798,6 @@
                 {
                   "name": "gitleaks",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -544,6 +820,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -557,10 +836,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -589,10 +864,6 @@
                 {
                   "name": "semgrep",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -618,6 +889,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -631,10 +905,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -652,10 +922,6 @@
                 {
                   "name": "trivy",
                   "constraint": "=\u003e 0.61.0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -681,6 +947,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -694,52 +963,324 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
             "order": 4
+          },
+          {
+            "id": "6",
+            "name": "zizmor-scan",
+            "slug": "zizmor-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/zizmor-scan",
+            "access": {
+              "env": [
+                {
+                  "name": "GH_HOSTNAME",
+                  "description": "GH_HOSTNAME is required for some online audits"
+                },
+                {
+                  "name": "GH_TOKEN",
+                  "description": "GH_TOKEN is required for some online audits. Takes precedence over GITHUB_TOKEN"
+                },
+                {
+                  "name": "GITHUB_TOKEN",
+                  "description": "GITHUB_TOKEN is set automatically by GitHub Actions"
+                }
+              ],
+              "executables": [
+                {
+                  "name": "zizmor",
+                  "constraint": "=\u003e 1.4.1"
+                }
+              ],
+              "network": [
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {},
+            "outputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "sarif"
+                }
+              ]
+            },
+            "order": 5
+          },
+          {
+            "id": "5",
+            "name": "sonarqube-scan",
+            "slug": "sonarqube-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/sonarqube-scan",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "SONAR_HOST_URL",
+                  "description": "The SonarQube host URL."
+                },
+                {
+                  "name": "SONAR_ORGANIZATION",
+                  "description": "The SonarQube organization."
+                },
+                {
+                  "name": "SONAR_PROJECTKEY",
+                  "description": "The SonarQube project key."
+                },
+                {
+                  "name": "SONAR_DEFAULT_BRANCH",
+                  "description": "The SonarQube default branch."
+                },
+                {
+                  "name": "SONAR_REGION",
+                  "description": "Can be used to switch to the US-based SonarCloud instance."
+                },
+                {
+                  "name": "SONAR_TOKEN",
+                  "description": "The SonarQube authentication token.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "sonar-scanner",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "sonarcloud.io:443"
+                },
+                {
+                  "host": "api.sonarcloud.io:443"
+                },
+                {
+                  "host": "scanner.sonarcloud.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "trx"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 6
+          },
+          {
+            "id": "7",
+            "name": "codecov-upload",
+            "slug": "codecov-upload",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/codecov-upload",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "CODECOV_TOKEN",
+                  "description": "The Codecov token to use for uploading the report.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "codecov",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "ingest.codecov.io:443"
+                },
+                {
+                  "host": "storage.googleapis.com:443"
+                },
+                {
+                  "host": "api.codecov.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 7
           }
         ]
       },
       "workflow_dependency": {
-        "actions/checkout": {
+        "pkg:github-action-runner-image/ubuntu": {
+          "id": "ubuntu",
+          "type": "github-action-runner-image",
+          "version": "24.04"
+        },
+        "pkg:github-action/actions/checkout": {
           "id": "actions/checkout",
           "type": "github-action",
-          "version": "v4.2.2",
-          "hash": "11bd71901bbe5b1630ceea73d27597364c9af683"
+          "version": "v6.0.2",
+          "hash": "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
         },
-        "actions/download-artifact": {
+        "pkg:github-action/actions/download-artifact": {
           "id": "actions/download-artifact",
           "type": "github-action",
-          "version": "v4.3.0",
-          "hash": "d3f86a106a0bac45b974a628896c90dbdf5c8093 "
+          "version": "v8.0.1",
+          "hash": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
         },
-        "actions/upload-artifact": {
+        "pkg:github-action/actions/upload-artifact": {
           "id": "actions/upload-artifact",
           "type": "github-action",
-          "version": "v4.6.2",
-          "hash": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+          "version": "v7.0.0",
+          "hash": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f"
         },
-        "cid": {
-          "id": "cid",
-          "type": "binary",
-          "version": "0.5.0"
-        },
-        "cidverse/ghact-cid-setup": {
-          "id": "cidverse/ghact-cid-setup",
-          "type": "github-action",
-          "version": "v0.2.0",
-          "hash": "c6dac0517d28bd8871c195fee9a6bd5a5854d5cb"
-        },
-        "step-security/harden-runner": {
+        "pkg:github-action/step-security/harden-runner": {
           "id": "step-security/harden-runner",
           "type": "github-action",
-          "version": "v2.12.0",
-          "hash": "0634a2670c59f64b4a01f0f96f84700a4088b9f0"
+          "version": "v2.16.0",
+          "hash": "fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594"
+        },
+        "pkg:github/cidverse/cid": {
+          "id": "cidverse/cid",
+          "type": "github",
+          "version": "0.9.0"
         }
       },
       "ignore_files": [
@@ -749,15 +1290,17 @@
         ".gitattributes",
         ".editorconfig",
         "renovate.json",
-        "CODEOWNERS"
+        "CODEOWNERS",
+        "SECURITY.md"
       ]
     },
     "Release": {
-      "version": "0.5.0",
+      "version": "0.9.0",
       "name": "Release",
       "name_slug": "release",
       "job_timeout": 10,
       "default_branch": "main",
+      "container_runtime": "podman",
       "workflow_key": "release",
       "workflow_config": {
         "type": "release",
@@ -785,6 +1328,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-build",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -813,6 +1357,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -834,6 +1381,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-test",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -862,6 +1410,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -898,10 +1449,6 @@
                 {
                   "name": "gitleaks",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -924,6 +1471,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -937,10 +1487,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -969,10 +1515,6 @@
                 {
                   "name": "semgrep",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -998,6 +1540,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -1011,10 +1556,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -1032,10 +1573,6 @@
                 {
                   "name": "trivy",
                   "constraint": "=\u003e 0.61.0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -1061,6 +1598,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -1074,35 +1614,314 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
             "order": 4
           },
           {
+            "id": "6",
+            "name": "zizmor-scan",
+            "slug": "zizmor-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/zizmor-scan",
+            "access": {
+              "env": [
+                {
+                  "name": "GH_HOSTNAME",
+                  "description": "GH_HOSTNAME is required for some online audits"
+                },
+                {
+                  "name": "GH_TOKEN",
+                  "description": "GH_TOKEN is required for some online audits. Takes precedence over GITHUB_TOKEN"
+                },
+                {
+                  "name": "GITHUB_TOKEN",
+                  "description": "GITHUB_TOKEN is set automatically by GitHub Actions"
+                }
+              ],
+              "executables": [
+                {
+                  "name": "zizmor",
+                  "constraint": "=\u003e 1.4.1"
+                }
+              ],
+              "network": [
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {},
+            "outputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "sarif"
+                }
+              ]
+            },
+            "order": 5
+          },
+          {
             "id": "5",
+            "name": "sonarqube-scan",
+            "slug": "sonarqube-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/sonarqube-scan",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "SONAR_HOST_URL",
+                  "description": "The SonarQube host URL."
+                },
+                {
+                  "name": "SONAR_ORGANIZATION",
+                  "description": "The SonarQube organization."
+                },
+                {
+                  "name": "SONAR_PROJECTKEY",
+                  "description": "The SonarQube project key."
+                },
+                {
+                  "name": "SONAR_DEFAULT_BRANCH",
+                  "description": "The SonarQube default branch."
+                },
+                {
+                  "name": "SONAR_REGION",
+                  "description": "Can be used to switch to the US-based SonarCloud instance."
+                },
+                {
+                  "name": "SONAR_TOKEN",
+                  "description": "The SonarQube authentication token.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "sonar-scanner",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "sonarcloud.io:443"
+                },
+                {
+                  "host": "api.sonarcloud.io:443"
+                },
+                {
+                  "host": "scanner.sonarcloud.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "trx"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 6
+          },
+          {
+            "id": "7",
+            "name": "codecov-upload",
+            "slug": "codecov-upload",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/codecov-upload",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "CODECOV_TOKEN",
+                  "description": "The Codecov token to use for uploading the report.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "codecov",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "ingest.codecov.io:443"
+                },
+                {
+                  "host": "storage.googleapis.com:443"
+                },
+                {
+                  "host": "api.codecov.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 7
+          },
+          {
+            "id": "8",
             "name": "changelog-generate",
             "slug": "changelog-generate",
             "stage": "publish",
             "scope": "project",
-            "action": "container://ghcr.io/cidverse/cid-actions-go:0.1.0+changelog-generate",
+            "action": "builtin://actions/changelog-generate",
             "run-after": [
+              "codecov-upload",
               "dotnet-build-test-library-dotnet-core",
               "dotnet-test-test-library-dotnet-core",
               "gitleaks-scan",
               "semgrep-scan",
-              "trivyfs-scan"
+              "sonarqube-scan",
+              "trivyfs-scan",
+              "zizmor-scan"
             ],
             "run-after-by-name": [
+              "codecov-upload",
               "dotnet-build [test-library-dotnet-core]",
               "dotnet-test [test-library-dotnet-core]",
               "gitleaks-scan",
               "semgrep-scan",
-              "trivyfs-scan"
+              "sonarqube-scan",
+              "trivyfs-scan",
+              "zizmor-scan"
             ],
             "access": {
               "network": [
@@ -1123,6 +1942,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -1140,30 +1962,36 @@
                 }
               ]
             },
-            "order": 5
+            "order": 8
           },
           {
-            "id": "6",
+            "id": "9",
             "name": "github-release-publish",
             "slug": "github-release-publish",
             "stage": "publish",
             "scope": "project",
-            "action": "container://ghcr.io/cidverse/cid-actions-go:0.1.0+github-release-publish",
+            "action": "builtin://actions/github-release-publish",
             "run-after": [
               "changelog-generate",
+              "codecov-upload",
               "dotnet-build-test-library-dotnet-core",
               "dotnet-test-test-library-dotnet-core",
               "gitleaks-scan",
               "semgrep-scan",
-              "trivyfs-scan"
+              "sonarqube-scan",
+              "trivyfs-scan",
+              "zizmor-scan"
             ],
             "run-after-by-name": [
               "changelog-generate",
+              "codecov-upload",
               "dotnet-build [test-library-dotnet-core]",
               "dotnet-test [test-library-dotnet-core]",
               "gitleaks-scan",
               "semgrep-scan",
-              "trivyfs-scan"
+              "sonarqube-scan",
+              "trivyfs-scan",
+              "zizmor-scan"
             ],
             "uses-output-of": [
               "changelog-generate"
@@ -1172,6 +2000,13 @@
               "changelog-generate"
             ],
             "access": {
+              "env": [
+                {
+                  "name": "GITHUB_TOKEN",
+                  "description": "The GitHub token to use for creating the release.",
+                  "required": true
+                }
+              ],
               "network": [
                 {
                   "host": "github.com:443"
@@ -1190,6 +2025,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -1210,45 +2048,44 @@
               ]
             },
             "outputs": {},
-            "order": 6
+            "order": 9
           }
         ]
       },
       "workflow_dependency": {
-        "actions/checkout": {
+        "pkg:github-action-runner-image/ubuntu": {
+          "id": "ubuntu",
+          "type": "github-action-runner-image",
+          "version": "24.04"
+        },
+        "pkg:github-action/actions/checkout": {
           "id": "actions/checkout",
           "type": "github-action",
-          "version": "v4.2.2",
-          "hash": "11bd71901bbe5b1630ceea73d27597364c9af683"
+          "version": "v6.0.2",
+          "hash": "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
         },
-        "actions/download-artifact": {
+        "pkg:github-action/actions/download-artifact": {
           "id": "actions/download-artifact",
           "type": "github-action",
-          "version": "v4.3.0",
-          "hash": "d3f86a106a0bac45b974a628896c90dbdf5c8093 "
+          "version": "v8.0.1",
+          "hash": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
         },
-        "actions/upload-artifact": {
+        "pkg:github-action/actions/upload-artifact": {
           "id": "actions/upload-artifact",
           "type": "github-action",
-          "version": "v4.6.2",
-          "hash": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+          "version": "v7.0.0",
+          "hash": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f"
         },
-        "cid": {
-          "id": "cid",
-          "type": "binary",
-          "version": "0.5.0"
-        },
-        "cidverse/ghact-cid-setup": {
-          "id": "cidverse/ghact-cid-setup",
-          "type": "github-action",
-          "version": "v0.2.0",
-          "hash": "c6dac0517d28bd8871c195fee9a6bd5a5854d5cb"
-        },
-        "step-security/harden-runner": {
+        "pkg:github-action/step-security/harden-runner": {
           "id": "step-security/harden-runner",
           "type": "github-action",
-          "version": "v2.12.0",
-          "hash": "0634a2670c59f64b4a01f0f96f84700a4088b9f0"
+          "version": "v2.16.0",
+          "hash": "fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594"
+        },
+        "pkg:github/cidverse/cid": {
+          "id": "cidverse/cid",
+          "type": "github",
+          "version": "0.9.0"
         }
       },
       "ignore_files": [
@@ -1258,15 +2095,17 @@
         ".gitattributes",
         ".editorconfig",
         "renovate.json",
-        "CODEOWNERS"
+        "CODEOWNERS",
+        "SECURITY.md"
       ]
     },
     "Main": {
-      "version": "0.5.0",
+      "version": "0.9.0",
       "name": "Main",
       "name_slug": "main",
       "job_timeout": 10,
       "default_branch": "main",
+      "container_runtime": "podman",
       "workflow_key": "main",
       "workflow_config": {
         "type": "main",
@@ -1292,6 +2131,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-build",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -1320,6 +2160,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -1341,6 +2184,7 @@
             "scope": "module",
             "action": "builtin://actions/dotnet-test",
             "module": "dotnet-test-library-dotnet-core-csproj",
+            "module-dir": ".",
             "access": {
               "executables": [
                 {
@@ -1369,6 +2213,9 @@
                 },
                 {
                   "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
                 },
                 {
                   "host": "ghcr.io:443"
@@ -1405,10 +2252,6 @@
                 {
                   "name": "gitleaks",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -1431,6 +2274,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -1444,10 +2290,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -1476,10 +2318,6 @@
                 {
                   "name": "semgrep",
                   "constraint": "\u003e= 0.0.0-0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -1505,6 +2343,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -1518,10 +2359,6 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
@@ -1539,10 +2376,6 @@
                 {
                   "name": "trivy",
                   "constraint": "=\u003e 0.61.0"
-                },
-                {
-                  "name": "gitlab-sarif-converter",
-                  "constraint": "\u003e= 0.0.0-0"
                 }
               ],
               "network": [
@@ -1568,6 +2401,9 @@
                   "host": "raw.githubusercontent.com:443"
                 },
                 {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
                   "host": "ghcr.io:443"
                 },
                 {
@@ -1581,52 +2417,324 @@
                 {
                   "type": "report",
                   "format": "sarif"
-                },
-                {
-                  "type": "report",
-                  "format": "gl-codequality"
                 }
               ]
             },
             "order": 4
+          },
+          {
+            "id": "6",
+            "name": "zizmor-scan",
+            "slug": "zizmor-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/zizmor-scan",
+            "access": {
+              "env": [
+                {
+                  "name": "GH_HOSTNAME",
+                  "description": "GH_HOSTNAME is required for some online audits"
+                },
+                {
+                  "name": "GH_TOKEN",
+                  "description": "GH_TOKEN is required for some online audits. Takes precedence over GITHUB_TOKEN"
+                },
+                {
+                  "name": "GITHUB_TOKEN",
+                  "description": "GITHUB_TOKEN is set automatically by GitHub Actions"
+                }
+              ],
+              "executables": [
+                {
+                  "name": "zizmor",
+                  "constraint": "=\u003e 1.4.1"
+                }
+              ],
+              "network": [
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {},
+            "outputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "sarif"
+                }
+              ]
+            },
+            "order": 5
+          },
+          {
+            "id": "5",
+            "name": "sonarqube-scan",
+            "slug": "sonarqube-scan",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/sonarqube-scan",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "SONAR_HOST_URL",
+                  "description": "The SonarQube host URL."
+                },
+                {
+                  "name": "SONAR_ORGANIZATION",
+                  "description": "The SonarQube organization."
+                },
+                {
+                  "name": "SONAR_PROJECTKEY",
+                  "description": "The SonarQube project key."
+                },
+                {
+                  "name": "SONAR_DEFAULT_BRANCH",
+                  "description": "The SonarQube default branch."
+                },
+                {
+                  "name": "SONAR_REGION",
+                  "description": "Can be used to switch to the US-based SonarCloud instance."
+                },
+                {
+                  "name": "SONAR_TOKEN",
+                  "description": "The SonarQube authentication token.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "sonar-scanner",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "sonarcloud.io:443"
+                },
+                {
+                  "host": "api.sonarcloud.io:443"
+                },
+                {
+                  "host": "scanner.sonarcloud.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "trx"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 6
+          },
+          {
+            "id": "7",
+            "name": "codecov-upload",
+            "slug": "codecov-upload",
+            "stage": "scan",
+            "scope": "project",
+            "action": "builtin://actions/codecov-upload",
+            "run-after": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "run-after-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "uses-output-of": [
+              "dotnet-test-test-library-dotnet-core"
+            ],
+            "uses-output-of-by-name": [
+              "dotnet-test [test-library-dotnet-core]"
+            ],
+            "access": {
+              "env": [
+                {
+                  "name": "CODECOV_TOKEN",
+                  "description": "The Codecov token to use for uploading the report.",
+                  "required": true,
+                  "secret": true
+                }
+              ],
+              "executables": [
+                {
+                  "name": "codecov",
+                  "constraint": "\u003e= 0.0.0-0"
+                }
+              ],
+              "network": [
+                {
+                  "host": "ingest.codecov.io:443"
+                },
+                {
+                  "host": "storage.googleapis.com:443"
+                },
+                {
+                  "host": "api.codecov.io:443"
+                },
+                {
+                  "host": "github.com:443"
+                },
+                {
+                  "host": "api.github.com:443"
+                },
+                {
+                  "host": "codeload.github.com:443"
+                },
+                {
+                  "host": "uploads.github.com:443"
+                },
+                {
+                  "host": "objects.githubusercontent.com:443"
+                },
+                {
+                  "host": "raw.githubusercontent.com:443"
+                },
+                {
+                  "host": "release-assets.githubusercontent.com:443"
+                },
+                {
+                  "host": "ghcr.io:443"
+                },
+                {
+                  "host": "pkg-containers.githubusercontent.com:443"
+                }
+              ]
+            },
+            "inputs": {
+              "artifacts": [
+                {
+                  "type": "report",
+                  "format": "junit"
+                },
+                {
+                  "type": "report",
+                  "format": "jacoco"
+                },
+                {
+                  "type": "report",
+                  "format": "cobertura"
+                }
+              ]
+            },
+            "outputs": {},
+            "order": 7
           }
         ]
       },
       "workflow_dependency": {
-        "actions/checkout": {
+        "pkg:github-action-runner-image/ubuntu": {
+          "id": "ubuntu",
+          "type": "github-action-runner-image",
+          "version": "24.04"
+        },
+        "pkg:github-action/actions/checkout": {
           "id": "actions/checkout",
           "type": "github-action",
-          "version": "v4.2.2",
-          "hash": "11bd71901bbe5b1630ceea73d27597364c9af683"
+          "version": "v6.0.2",
+          "hash": "de0fac2e4500dabe0009e67214ff5f5447ce83dd"
         },
-        "actions/download-artifact": {
+        "pkg:github-action/actions/download-artifact": {
           "id": "actions/download-artifact",
           "type": "github-action",
-          "version": "v4.3.0",
-          "hash": "d3f86a106a0bac45b974a628896c90dbdf5c8093 "
+          "version": "v8.0.1",
+          "hash": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
         },
-        "actions/upload-artifact": {
+        "pkg:github-action/actions/upload-artifact": {
           "id": "actions/upload-artifact",
           "type": "github-action",
-          "version": "v4.6.2",
-          "hash": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+          "version": "v7.0.0",
+          "hash": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f"
         },
-        "cid": {
-          "id": "cid",
-          "type": "binary",
-          "version": "0.5.0"
-        },
-        "cidverse/ghact-cid-setup": {
-          "id": "cidverse/ghact-cid-setup",
-          "type": "github-action",
-          "version": "v0.2.0",
-          "hash": "c6dac0517d28bd8871c195fee9a6bd5a5854d5cb"
-        },
-        "step-security/harden-runner": {
+        "pkg:github-action/step-security/harden-runner": {
           "id": "step-security/harden-runner",
           "type": "github-action",
-          "version": "v2.12.0",
-          "hash": "0634a2670c59f64b4a01f0f96f84700a4088b9f0"
+          "version": "v2.16.0",
+          "hash": "fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594"
+        },
+        "pkg:github/cidverse/cid": {
+          "id": "cidverse/cid",
+          "type": "github",
+          "version": "0.9.0"
         }
       },
       "ignore_files": [
@@ -1636,7 +2744,8 @@
         ".gitattributes",
         ".editorconfig",
         "renovate.json",
-        "CODEOWNERS"
+        "CODEOWNERS",
+        "SECURITY.md"
       ]
     }
   }
